@@ -1,0 +1,408 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<title>NUKEMAP by Alex Wellerstein</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="title" content="NUKEMAP by Alex Wellerstein" />
+<meta name="description" content="NUKEMAP is a Google Maps mash-up that calculates the effects of the detonation of a nuclear bomb." />
+<meta property="og:title" content="NUKEMAP by Alex Wellerstein"/>
+<meta property="og:description" content="NUKEMAP is a Google Maps mash-up that calculates the effects of the detonation of a nuclear bomb."/>
+<meta property="og:type" content="website" />
+<meta property="og:image" content="http://nuclearsecrecy.com/nukemap/images/nukemapthumb_large.jpg"/>
+<meta property="og:url" content="http://nuclearsecrecy.com/nukemap/"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9" />
+<link rel="apple-touch-icon" sizes="57x57" href="images/icons/apple-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="images/icons/apple-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="images/icons/apple-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="images/icons/apple-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="images/icons/apple-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="images/icons/apple-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="images/icons/apple-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="images/icons/apple-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="images/icons/apple-icon-180x180.png">
+<link rel="icon" type="image/png" sizes="192x192"  href="images/icons/android-icon-192x192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="images/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="images/icons/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="images/icons/favicon-16x16.png">
+<link rel="manifest" href="images/icons/manifest.json">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="images/icons/ms-icon-144x144.png">
+<meta name="theme-color" content="#ffffff">
+<script type="text/javascript">
+/* TO DO? -- 
+- weird bugs with fallout angles on multiple dets after using the det list editor? probably has to do with the windsock.
+
+VERSIONS --
+2.0 -- added fallout, casualties, so many other options
+2.1 -- updated blast code for arbitrary airburst heights
+2.2 -- updated fallout code for near surface airbursts
+2.3 -- add CEP rings, interface minimizer
+2.4 -- add style options for embedding
+2.41 -- add grayscale, fix one little bug re: multiple detonations
+2.42 -- some fixes to make more compatible with IE11 :-P
+2.43 -- improved CSS, etc. for IE/Windows... 
+2.45 -- fixed psi problem with Firefox
+2.5 -- add KMZ/KML support, early weather support, high-res icons
+2.55 -- better weather support, some other touch-ups, cloud dimensions
+
+WISHLIST --
+-- multiple detonations don't double-count casualties
+
+
+*/
+var ver = 2.55;
+var local = false; 
+//function that makes sure all scripts are loaded before trying to start
+var registered = 0;
+var register_count = 9;
+var dom_loaded = false;
+window.onload = function() { dom_loaded = true; };
+function register(i) { 
+	registered++; 
+	if(registered>=register_count) { 
+		if(dom_loaded) {
+			start();
+		} else {
+			window.onload = start; 
+		}
+	}
+}
+var strings = [];
+var langs; var lang;
+</script>
+<link rel="stylesheet" type="text/css" href="static/css/nukemap2_2.css"></link>
+<script type="text/javascript" src="static/js/jquery.min_2.js"></script>
+<link rel="stylesheet" type="text/css" href="static/css/millions_2.css"></link>
+<script type="text/javascript" src="static/js/506957f4156e447ba0c6abe5db0636d4.js"></script>
+<script type="text/javascript" src="static/js/c5b072ecb320499aaf0d1fd7b607a1b8.js"></script>
+<script type="text/javascript" src="static/js/geo_2.js"></script>
+<script type="text/javascript" src="static/js/cities_2.js"></script>
+<script type="text/javascript" src="static/js/citydata_2.js"></script>
+<script type="text/javascript" src="static/js/nukemap2_1.js"></script>
+<script type="text/javascript" src="static/js/nukeeffects_2.js"></script>
+<script type="text/javascript" src="static/js/places_2.js"></script>
+<script type="text/javascript" src="static/js/nukekmz_2.js"></script>
+<script type="text/javascript" src="static/js/casualties_1.js"></script>
+<script type="text/javascript" src="static/js/fallout_2.js"></script>
+<script type="text/javascript" src="static/js/shared_2.js"></script>
+<script type="text/javascript">
+	if(!local) {
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-2625606-14']);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+	}
+</script>
+</head>
+<body>
+<div id="fb-root"></div>
+<script>if(!local) { (function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=222138484505451";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk')); } </script>
+<div id="theMap"></div>
+<div id="theSettings">
+	<div id="topFrame">
+		<big id="title"><a href="//nuclearsecrecy.com/nukemap/"><span lang="capNUKEMAP">NUKEMAP</span></a></big><span style="display:none;"> </span><sub id="version">2.55 <span id="faq_line">: <a id="faq" href="./faq/"><span lang="capFAQ">FAQ</span></a></span><span id="lang"><select id="lang_sel" onchange="changelang(this.value)"></select></span></sub>
+		<div id="nukemap3d"><em style="color: #a0a0a0;"><span lang="capYouMightTry">You might also try</span>:</em><br><a href="//nuclearsecrecy.com/missilemap/" style="text-decoration: none;"><span style="font-size: 14pt;"><span style="letter-spacing: 2px; font-weight:200;"><span lang="capNUKEMAP">MISSILEMAP</span></span></span></a></div>
+		<br>
+		<hr style="margin-top:5px;margin-bottom:5px;">
+	</div>
+	<div id="bottomFrame">
+		<div id="city">
+		<span class="numbered" id="numbered_1">1</span>. <span lang="capDragMarker"><b>Drag</b> the marker to wherever you'd like to target.</span><br>
+		<div id="city_preset">
+		<select name="presetcity" id="presetcity" onchange="jumpcity(this.value);">
+		<option lang="capPreset">Or you can select a preset...</option>
+		<option value="38.89469253046311,-77.02189926086425">Washington, DC, USA</option>
+		<option value="40.72422,-73.9961">New York, NY, USA</option>
+		<option value="42.358056,-71.063611">Boston, MA, USA</option>
+		<option value="34.04539016791607,-118.25251583038329">Los Angeles, CA, USA</option>
+		<option value="37.756450878452306,-122.424551662384032">San Francisco, CA, USA</option>
+		<option value="41.86993043630711,-87.63636592803954">Chicago, IL, USA</option>
+		<option value="39.98670787517569,-75.11298183380126">Philadelphia, PA, USA</option>
+		<option value="21.307,-157.858">Honolulu, HI, USA</option>
+		<option value="55.751667,37.617778">Moscow, Russia</option>
+		<option value="51.499167,-0.124722">London, England</option>
+		<option value="48.8583,2.2945">Paris, France</option>
+		<option value="52.516306,13.377218">Berlin, Germany</option>
+		<option value="39.903333,116.391667">Beijing, China</option>
+		<option value="28.613889,77.208889">New Delhi, India</option>
+		<option value="33.716667,73.066667">Islamabad, Pakistan</option>
+		<option value="35.689506,139.6917">Tokyo, Japan</option>
+		<option value="39.019444,125.738056">Pyongyang, North Korea</option>
+		<option value="37.566536,126.977969">Seoul, South Korea</option>
+		<option value="35.696111,51.423056">Tehran, Iran</option>
+		<option value="32.062921463541734,34.77570529998775">Tel Aviv, Israel</option>
+		<optgroup style="border-top: 1px dotted #ccc; margin: 5px 0;" label="Historical locations:"></optgroup> 
+		<option value="33.6773,-106.4754">Trinity site, NM, USA (1945)</option>
+		<option value="34.39468,132.45462">Hiroshima, Japan (1945)</option>
+		<option value="32.77372,129.86325">Nagasaki, Japan (1945)</option>
+		<option value="11.665574250612078,162.1932954709473">Elugelab, Enewetak, Marshall Islands (1952)</option>
+		<option value="11.697222,165.271944">Namu Island, Bikini Atoll, Marshall Islands (1954)</option>
+		<option value="37.176944,-116.0461112">Sedan Crater, Nevada Test Site, NV, USA (1962)</option>
+		<option value="73.807222,54.981667000000016">Tsar Bomba site, Novaya Zemlya, Russia (1961)</option>
+		</select><br></div>
+		<div id="city_input">
+		<small><i><span lang="capCityName">Or type in the name of a city:</span></i></small> <input type="text" id="jumptocity"> <button onclick="jumptocitytext(); return false;"><span lang="capGO">Go</span></button><br>
+		</div>
+		</div>
+		<hr id="city_hr" style="margin-top:5px;margin-bottom:5px;">
+		<div id="yield_div">
+		<span class="numbered" id="numbered_2">2</span>. <span lang="capEnterYield"><b>Enter a yield</b> (in kilotons):</span> <input type="text" id="theKt" value=""><br>
+		<select name="preset" id="preset" onchange="updatefrompreset(this.value)">
+		<option lang="capPreset">Or you can select a preset...</option>
+		<option value=".02,0,100">"Davy Crockett" - smallest US bomb produced (20 t)</option>
+		<option value=".1,0,100">Crude nuclear terrorist weapon (100 t)</option>
+		<option value=".3,0,100">B-61 Mod 3 (lowest yield currently in US arsenal) (300 t)</option>
+		<option value=".5,1,100">North Korean weapon tested in 2006 (500 t)</option>
+		<option value="6,1,100">North Korean weapon tested in 2009 (6 kt)</option>
+		<option value="10,1,100">North Korean weapon tested in 2013 (10 kt)</option>
+		<option value="10,0,100">Improvised HEU device - nuclear terrorism (10 kt)</option>
+		<option value="15,1,100,1968">"Little Boy" - Hiroshima bomb (15 kt)</option>
+		<option value="20,1,100,100">"Gadget" - Trinity test (20 kt)</option>
+		<option value="20,1,100,1650">"Fat Man" - Nagasaki bomb (20 kt)</option>
+		<option value="45,1,100">Largest Pakistani weapon tested (45 kt)</option>
+		<option value="60,1,100">Largest Indian weapon tested (60 kt)</option>
+		<option value="100,1,50">W-76 (common in US & UK SLBM arsenal) (100 kt)</option>
+		<option value="150,1,50">North Korean weapon tested in 2017 (150 kt?)</option>
+		<option value="150,1,50">W-80 (currently in US arsenal, cruise missile) (150 kt)</option>
+		<option value="300,1,50">W-87 (currently in US arsenal, Minuteman III) (300 kt)</option>
+		<option value="300,1,50">TN 80/81 (largest current French warhead) (300 kt)</option>
+		<option value="340,1,50">B-61 Mod 7 (currently in US arsenal) (340 kt)</option>
+		<option value="350,1,50">W-78 (currently in US arsenal, Minuteman III) (350 kt)</option>
+		<option value="455,1,50">W-88 (Trident D5 warhead) (455 kt)</option>
+		<option value="500,0,100">"Ivy King" - largest pure fission weapon tested by USA (500 kt)</option>
+		<option value="800,1,50">Topol (SS-25) (currently in Russian arsenal) (800 kt)</option>
+		<option value="1000,1,50">W-59 (Minuteman I warhead) (1 Mt)</option>
+		<option value="1200,1,50">B-83 (largest bomb in current US arsenal) (1.2 Mt)</option>
+		<option value="2300,1,50">R-12 (SS-4) Soviet missile, Cuban missile crisis (2.42 Mt)</option>
+		<option value="3300,1,50">Dong Feng-4, China's first deployed ICBM (3.3 Mt)</option>
+		<option value="4000,0,55">W-39, US H-bomb, almost accidentally detonated in 1961 (4 Mt)</option>
+		<option value="5000,1,50">Dong Feng-5, China's current ICBMs (5 Mt)</option>
+		<option value="9000,1,50">W-53 (Titan II warhead, highest yield ICBM US deployed) (9 Mt)</option>
+		<option value="10400,0,80">"Ivy Mike" - first H-bomb (10.4 Mt)</option>
+		<option value="15000,0,68">"Castle Bravo" - largest US bomb tested (15 Mt)</option>
+		<option value="50000,1,3,13000">"Tsar Bomba" - largest USSR bomb tested (50 Mt)</option>
+		<option value="100000,1,52">"Tsar Bomba" - largest USSR bomb designed (100 Mt)</option>
+		</select><br id="preset_br">
+		</div>
+		<hr style="margin-top:5px;margin-bottom:5px;" id="yield_hr">
+		<div id="basic_options">
+		<form name="options">
+		<span class="numbered" id="numbered_3">3</span>. <b>Basic options:</b> 
+		<em><span lang="capHeightofBurst">Height of burst</span>:</em> <span class="def-bracket1">[</span><abbr class="def" title="A surface burst means the nuclear weapon is detonated on or very near the ground. An airburst means that the weapon is detonated high enough that its fireball does not touch the ground. They have somewhat different acute effects, and very different radiological effects (e.g. fallout is primarily from surface bursts).">?</abbr><span class="def-bracket2">]</span> <input type="radio" name="hob" id="hob_airburst" value="1"> Airburst <input type="radio" name="hob" id="hob_surface" value="0" checked> Surface<br>
+		<em style="margin-left: 15px;"><span lang="capOtherEffects">Other effects</span>:</em> <input type="checkbox" name="other" value="2" title="Makes estimate as to the number of injured and dead from specified blast, using population density information and the nuclear effects information."> Casualties <input type="checkbox" title="Radioactive fallout is dust, debris, and fission products that \'fall out\' of the mushroom cloud of surface bursts." id="fallout_check_2" class="fallout_check" onchange="document.getElementById('fallout_check').checked=this.checked;"> Radioactive fallout
+		<hr id="adv_options_hr">
+		<div id="adv_options">
+		<span id="advanced-options-header" style="margin-left: 1em;"><b>Advanced options:</b></span><br>
+		<div id="collapsed-content" style="display: none;">
+		<span style="height: 5px; display: block;"></span>
+		<em><span lang="capAirburstSettings">Airburst settings</span>:</em> <span class="def-bracket1">[</span><abbr class="def" title="Airbursts can either be set to a specific burst height, or they can be set to maximize a given blast radius.">?</abbr><span class="def-bracket2">]</span>
+		<ul style="margin-top: 2px; margin-bottom: 2px;">
+		<input type="radio" name="hob_option" id="hob_option_max" value="0"> Maximize airburst radii for all effects <span class="def-bracket1">[</span><abbr class="def" title="Shows the radii for many different blast heights, each chosen to maximum their effects.">?</abbr><span class="def-bracket2">]</span><br>
+		<input checked type="radio" name="hob_option" id="hob_option_opt" value="1"> Optimize for overpressure: <input type="text" value="5" name="hob_psi" class="option_input"> psi<br>
+		<input type="radio" name="hob_option" id="hob_option_height" value="2"> Burst height: <input type="text" value="200" name="hob_h" id="hob_h" class="option_input"> <select name="hob_h_u" id="hob_h_u"><option value="0" selected>ft</option><option value="1">m</option><option value="2">mi</option><option value="3">km</option></select>
+		</ul>
+		<em><span lang="capOverpressureShow">Show overpressure rings for</span>:</em> <span class="def-bracket1">[</span><abbr class="def" title="Overpressure is physical blast force above standard atmospheric pressure. Here it is expressed as pounds-per-square-inch (psi) of force.">?</abbr><span class="def-bracket2">]</span>
+		<ul style="margin-top: 2px; margin-bottom: 2px;">
+		<input type="checkbox" name="psi" value="3000"> 3,000 psi (destroys missile bunkers)<br>
+		<input type="checkbox" name="psi" value="200"> 200 psi (extreme damage)<br>
+		<input type="checkbox" name="psi" value="20" checked> 20 psi (heavy damage)<br>
+		<input type="checkbox" name="psi" value="5" checked> 5 psi (medium damage)<br>
+		<input type="checkbox" name="psi" value="1" checked> 1 psi (light damage)<br>
+		<input type="checkbox" name="psi" id="psi_other_check_1" value="-1"> Other: <input type="text" class="option_input" name="psi_other_1" id="psi_other_1"> psi <span id="addrow_psi"></span><a href="#" class="addrow" onclick="addrow('psi');" title="Add another row">[+]</a>
+		</ul>
+		<em>Show ionizing radiation rings for:</em> <span class="def-bracket1">[</span><abbr class="def" title="Ionizing radiation is the initial high-energy burst of radiation caused by the nuclear explosion, made up primarily of neutrons and gamma rays. It is expressed here in Roentgen equivalent man (rem) units, which is a unit for radiation absorption in humans.">?</abbr><span class="def-bracket2">]</span>
+		<ul style="margin-top: 2px; margin-bottom: 2px;">
+		<input type="checkbox" name="rem" value="100"> 100 rem (sickness, increased lifetime cancer risk)<br>
+		<input type="checkbox" name="rem" value="500" checked> 500 rem (50-90% mortality without medical care)<br>
+		<input type="checkbox" name="rem" value="600"> 600 rem (80% mortality with medical care)<br>
+		<input type="checkbox" name="rem" value="1000"> 1,000 rem (95% mortality with medical care)<br>
+		<input type="checkbox" name="rem" value="5000"> 5,000 rem (100% mortality)<br>
+		<input type="checkbox" name="rem" id="rem_other_check_1" value="-1"> Other: <input type="text" class="option_input" name="rem_other_1"> rem <span id="addrow_rem"></span><a href="#" class="addrow" onclick="addrow('rem');" title="Add another row">[+]</a>
+		</ul>
+		<em>Show thermal radiation rings for:</em> <span class="def-bracket1">[</span><abbr class="def" title="Thermal radiation is heat energy produced by the nuclear explosion. It is here expressed in units of calories-per-square-centimeter (cal/cm&sup2;).">?</abbr><span class="def-bracket2">]</span>
+		<ul style="margin-top: 2px; margin-bottom: 2px;">
+		<input type="checkbox" name="therm" value="_3rd-100" checked> Third degree burns (100% probability)<br>
+		<input type="checkbox" name="therm" value="_3rd-50"> Third degree burns (50% probability)<br>
+		<input type="checkbox" name="therm" value="_2nd-50"> Second degree burns (50% probability)<br>
+		<input type="checkbox" name="therm" value="_1st-50"> First degree burns (50% probability)<br>
+		<input type="checkbox" name="therm" value="_noharm-100"> Minimum radius for 100% probability of no burn<br>
+		<input type="checkbox" name="therm" value="35"> Dry wood usually burns (35 cal/cm&sup2;)<br>
+		<input type="checkbox" name="therm" id="therm_other_check_1" value="-1"> Other: <input type="text" class="option_input" name="therm_other_1"> cal/cm&sup2; <span id="addrow_therm"></span><a href="#" class="addrow" onclick="addrow('therm','cal/cm&sup2;');" title="Add another row">[+]</a>
+		</ul>
+		<em>Other effects:</em>
+		<ul style="margin-top: 2px; margin-bottom: 2px;">
+		<input type="checkbox" id="check_fireball" name="other" value="0" title="The maximum size of the initial fireball of the detonation." checked> Fireball<br>
+		<input type="checkbox" id="check_crater" name="other" value="1" title="The maximum size for the crater created by the detonation, assuming a surface burst on soil."> Crater<br>
+		<input type="checkbox" id="check_humanitarian" name="other" value="3" title="This setting attempts to indicate approximately how many hospitals, schools, firestations, and places of worship the blast would destroy, as an attempt to highlight purely humanitarian aspects of the detonation."> Humanitarian impact (<input type="checkbox" name="other" value="4">plot locations)<br>
+		<input type="checkbox" name="other" title="Radioactive fallout is dust, debris, and fission products that 'fall out' of the mushroom cloud of surface bursts." onchange="document.getElementById('fallout_check_2').checked=this.checked;" class="fallout_check" id="fallout_check" value="5"> Fallout<br>
+		<span id="fallout_submenu"><span class="fallout_submenu_dash">&rdsh;</span> wind speed:<input type="text" title="The average wind speed affecting the fallout cloud, in miles-per-hour." class="option_input_wind" name="fallout_wind" id="fallout_wind" value="15"> mph, origin <input name="fallout_angle" id="fallout_angle" class="option_input_angle" value="225">&deg; (<a href="#" onclick="getlocalwind();return false;" title="Gets the current wind speed/direction at the target coordinates (if possible)" id="get_local_wind">get local</a><span id="wind_prog"></span>)<br>
+		<span class="fallout_submenu_dash">&rdsh;</span> fission fraction:<input title="The pecentage of the total yield that comes from nuclear fission, as opposed to nuclear fusion. For pure 'atomic' bombs, the yield is 100% fission. For 'hydrogen' bombs, the yield is usually around 50% fission, 50% fusion." type="text" class="option_input_fission" name="fallout_fission" id="fallout_fission" value="100">%<br></span>
+		<span id="settings_cep"><input type="checkbox"id="check_cep" name="other" value="6" title="Shows the Circular Error Probable of the weapon in question -- the area where, if aimed at the designated ground zero, it might actually land."> Show <a href="http://en.wikipedia.org/wiki/Circular_error_probable" target="_blank">Circular Error Probable</a>: <input type="text" value="0" name="cep" id="cep" class="option_input"> <select name="cep_unit" id="cep_unit"><option value="0" selected>ft</option><option value="1">m</option><option value="2">mi</option><option value="3">km</option></select><br></span>
+		<input type="checkbox" name="other" value="7" id="check_cloud" title="The dimensions of the stabilized mushroom cloud."> Mushroom cloud dimensions<br>
+        <span id="ge_icon"><img src="static/picture/ge_icon_2.png" width="10px"></span><a href="#" onclick="init_kmzmenu(); $('#kmzmenu').fadeIn(300); return false;">Export to Google Earth (KMZ)</a>
+		</ul>
+		<div style="text-align: right; display: block;">
+		<small><em><input type="checkbox" name="collapser" checked> Collapse options on "detonate"</em></small>
+		</div>
+		</div>
+		</form>
+		</div>
+		</div>
+		<hr style="margin-top:5px;margin-bottom:5px;" id="basic_options_hr">
+		<div id="detonate_div">
+		<span class="numbered" id="numbered_4">4</span>. <span lang="capDetonateInstructions"><b>Click</b> the "Detonate" button below.</span><br>
+		<button id="detonate" class="btn-danger btn-large" onclick="launch();" title="Detonate (or re-detonate) the bomb"><span lang="capDetonate">Detonate</span></button>
+		<div id="buttons_other">
+		<button id="button_clear" onclick="clearmap();" title="Clear the bomb effects from map"><span lang="capClearAllEffects">Clear all effects</span></button> 
+		<button id="button_detach" onclick="detach();" title="Allows you to plot multiple nuclear explosions"><span lang="capLaunchMultiple">Launch multiple</span></button> <br>
+		<button id="button_center" onclick="centercursor();" title="Move the target marker to the center of the current screen"><span lang="capCenterGroundZero">Center ground zero</span></button> 
+		<button id="button_probe" onclick="add_sample_marker(this.id);" id="sample_button"><span lang="capProbeLocation">Probe location</span></button>
+		</div>
+		<br clear="both"><small id="button_note"><b>Note</b> that you can drag the target marker after you have detonated the nuke.</small>
+		</div>
+		<div id="detonate_error"></div>
+		<a name="#effects"></a>
+		<div id="theLegendCasualties">
+		</div>
+		<div id="theLegend">
+		</div>
+		<div id="sample_info"></div>
+		<div id="theLegendFallout">
+		</div>
+		<div id="theLegendPlaces">
+		</div>
+		<div id="thePermalink">
+		</div>	
+		<hr id="detonate_hr">
+		<span lang="capCredit" id="createdby">Created by <a href="http://blog.nuclearsecrecy.com/">Alex Wellerstein</a>, 2012-2018.</span><br>
+		<small id="stat_line"></small><small>For more about the nuclear past and present, follow <a href="https://twitter.com/#!/wellerstein" target="_blank"><b>@wellerstein</b> on Twitter</a>, and read <em><a href="http://blog.nuclearsecrecy.com">Restricted Data: The Nuclear Secrecy Blog</a></em>.</small>
+		<hr id="shares_hr">
+		<div class="shares" id="shares">
+			<div style="margin-right: 10px; top:-3px;" class="fb-like" data-href="http://nuclearsecrecy.com/nukemap/" data-send="false" data-layout="button_count" data-width="100" data-show-faces="false"></div>
+			<div><a href="//twitter.com/share" data-url="http://nuclearsecrecy.com/nukemap/" count="horizontal" class="twitter-share-button" data-lang="en">Tweet</a></div>
+			<div><g:plusone size="medium" href="http://nuclearsecrecy.com/nukemap/"></g:plusone></div>
+			<div class="interface_minimize_div"><a href="#" onclick="return false;" title="Minimize interface (good for screenshots)" id="minimize_interface"><img src='static/picture/minify_2.gif'/></a></div>
+		</div>
+		<hr id="other_options_hr">
+		<div id="other_options">
+		<small>Other options: <input type="checkbox" checked="checked" id="option_autozoom"> Auto-zoom <input type="checkbox" id="option_logdata"> Don't log usage data <input type="checkbox" id="option_gray"> Grayscale map</small>
+		</div>
+		<div id="endnote">
+		</div>
+		<hr id="classic_link_hr">
+		<div id="classic_link">
+		<small>Looking for the old NUKEMAP? There is an archived copy <a href="classic/">here</a>.</small>
+		</div>
+		<hr id="footer_hr">
+		<div id="footer" style="text-align: right; margin-bottom: 8px;">
+			<span style="float: right;padding-top:0em; padding-left: .5em;">
+			<a href="https://www.stevens.edu/" target="_blank" title="Stevens Institute of Technology">
+			<img src="static/picture/stevenslogo2_2.png"  height="50" width="32" alt="Stevens Institute of Technology"></a>
+			</span>
+		<small>NUKEMAP is hosted by: <br><a href="https://www.stevens.edu/college-arts-and-letters">the College of Arts and Letters,<br>Stevens Institute of Technology</a></small>
+		</div>
+		<hr style="padding-bottom: 10px;">
+	</div>
+	<div id="hiddenFrame">
+		<div class="interface_restore_div">
+			<a href="#" onclick="return false;" title="Restore interface" id="restore_interface"><img src='static/picture/maxify_1.gif'/></a>
+		</div>
+	</div>
+</div>
+<div id="kmzmenu">
+    <div id="closekmzwindow"><a title="Hide the Export to KMZ window" href="#" onclick='$("#kmzmenu").fadeOut(300);'>&times;</a></div>
+    <h2>Export to Google Earth (KMZ) <sup>(beta)</sup> <span id="kmzmenu_detlist">No detonations to export!</span></h2> 
+    <div id="option_header">Render objects</div>
+    <div id="kmzmenu_basic">
+        <table id="kmzmenu_basic_table">
+        <tr>
+        <td>
+        <ul>
+        <input type="checkbox" id="render_rings" checked/> Render effects as rings on ground <span class="def-bracket1">[</span><abbr class="def" id="def_render_rings" title="Renders the effects rings visible in the NUKEMAP detonation settings as rings on the ground in the KMZ file.">?</abbr><span class="def-bracket2">]</span><br>
+        <input type="checkbox" id="render_fireball_sphere"/> Render fireball as 3D sphere <span class="def-bracket1">[</span><abbr class="def" id="def_render_fireball_sphere" title="Renders the fireball of the shot as a volumetric sphere centered at the burst height.">?</abbr><span class="def-bracket2">]</span><br>
+        <input type="checkbox" id="render_fallout" /> Render fallout contours on ground <span class="def-bracket1">[</span><abbr class="def" id="def_render_fallout" title="Render the various contours of long-range fallout as polygons in the KMZ file. Wind direction, fission fraction, wind speed, and radiation doses are taken from NUKEMAP detonation settings.">?</abbr><span class="def-bracket2">]</span><br>
+        <input type="checkbox" id="render_cloud" checked/> Render 3D mushroom cloud <span class="def-bracket1">[</span><abbr class="def" id="def_render_cloud" title="Renders the mushroom cloud as a 3D volumetric model, at its full height.">?</abbr><span class="def-bracket2">]</span><br>
+        </ul>
+        </td>
+        <td id="exportKMZcell">
+        <button id="exportKMZ" onclick="exportKMZ();">Download file</button>
+        <div id="kmzfilecaption">View the downloaded file in<br><a href="https://www.google.com/earth/desktop/" target="_blank">Google Earth for Desktop</a>.<br><u>NOTE:</u> Google Earth is made by Google, not me. If it doesn't work, blame them, not me.</div>
+        </td>
+        </table>
+    </div>
+    <div id="option_header">Advanced display options <a id="kmzadv_showhide" href="#" onclick="kmzadv_showhide(); return false;" title="Show/hide advanced display options">[+]</a></div>
+    <div id="kmzmenu_adv">
+        <table id="kmzmenu_adv_table">
+        <tr>
+        <td>
+            <div class="adv_submenu">Effect ring settings:</div>
+            <ul>
+            Draw mode: <select id="ring_mode">
+                <option value="0" selected>Basic</option>
+                <option value="1">Donuts</option>
+                <option value="2">Line only</option>
+                <option value="3">Fill only</option>
+            </select> <span class="def-bracket1">[</span><abbr class="def" id="def_ring_mode" title="Effects rings can be drawn in several different ways. 'Basic' draws each ring as a filled-in circle surrounded by a line. 'Donut' makes rings so that each ring doesn't intersect or overlap with smaller rings inside of it. 'Line only' or 'fill only' draws the same rings as 'Basic' but with or without a fill or line.">?</abbr><span class="def-bracket2">]</span><br>
+            Altitude mode: <select id="ring_altitude_mode">
+                <option value="1" selected>Staggered</option>
+                <option value="0">Single</option>
+            </select> <span class="def-bracket1">[</span><abbr class="def" id="def_ring_altitude_mode" title="Effects rings with a 'Single' altitude are all drawn at the exact same base altitude. 'Staggered' draws the largest ring at the base altitude, but each smaller ring is offset upwards by the stagger distance.">?</abbr><span class="def-bracket2">]</span><br>
+            Base altitude (m): <input type="text" id="ring_altitude_base" value="150"/> <span class="def-bracket1">[</span><abbr class="def" id="def_ring_altitude_base" title="The altitude at which the bottom effects rings are drawn. Units are meters.">?</abbr><span class="def-bracket2">]</span><br>
+            Stagger distance (m): <input type="text" id="ring_altitude_stack" value="5"/> <span class="def-bracket1">[</span><abbr class="def" id="def_ring_altitude_stack" title="If the ring altitude mode is set to 'staggered', the distance in which each ring is drawn above smaller rings. Units are meters.">?</abbr><span class="def-bracket2">]</span><br>
+            Fill opacity (0-1): <input type="text" id="ring_fill_alpha" value=".5"/> <span class="def-bracket1">[</span><abbr class="def" id="def_ring_fill_alpha" title="If rings have a fill, the opacity (transparency) of the fill color. 0 = transparent, .5 = 50% transparent/opaque, 1 = fully opaque.">?</abbr><span class="def-bracket2">]</span><br>
+            Line width (px): <input type="text" id="ring_line_width" value="2"/> <span class="def-bracket1">[</span><abbr class="def" id="def_ring_line_width" title="If rings have a line, the width of the line.">?</abbr><span class="def-bracket2">]</span><br>
+            Line opacity (0-1): <input type="text" id="ring_line_alpha" value=".8"/> <span class="def-bracket1">[</span><abbr class="def" id="def_ring_line_alpha" title="If rings have a line, the opacity (transparency) of the line. 0 = transparent, .5 = 50% transparent/opaque, 1 = fully opaque.">?</abbr><span class="def-bracket2">]</span><br>
+            Circle steps (16-128): <input type="text" id="circle_steps" value="64"/> <span class="def-bracket1">[</span><abbr class="def" id="def_circle_steps" title="Ring circles are manually drawn circles made up of many line segments. This setting indicates how many line segments per circle. A lower number results in a circle whose edges are noticibly not round, higher values are rounder but require more size and memory to render.">?</abbr><span class="def-bracket2">]</span><br>
+            </ul>
+        </td>
+        <td>
+           <div class="adv_submenu">Fallout contour settings:</div>
+            <ul>
+            Draw mode: <select id="fallout_mode">
+                <option value="0" selected>Basic</option>
+                <option value="2">Line only</option>
+                <option value="3">Fill only</option>
+            </select> <span class="def-bracket1">[</span><abbr class="def" id="def_fallout_mode" title="Fallout contours can be drawn in several different ways. 'Basic' draws each contour as a filled-in polygon surrounded by a line. 'Line only' or 'fill only' draws the same contours as 'Basic' but with or without a fill or line.">?</abbr><span class="def-bracket2">]</span><br>
+            Altitude mode: <select id="fallout_altitude_mode">
+                <option value="1" selected>Staggered</option>
+                <option value="0">Single</option>
+            </select> <span class="def-bracket1">[</span><abbr class="def" id="def_fallout_altitude_mode" title="Fallout contours with a 'Single' altitude are all drawn at the exact same base altitude. 'Staggered' draws the largest contour at the base altitude, but each smaller contour is offset upwards by the stagger distance.">?</abbr><span class="def-bracket2">]</span><br>
+            Base altitude (m): <input type="text" id="fallout_altitude_base" value="100"/> <span class="def-bracket1">[</span><abbr class="def" id="def_fallout_altitude_base" title="The altitude at which the bottom contours are drawn. Units are meters.">?</abbr><span class="def-bracket2">]</span><br>
+            Stagger distance (m): <input type="text" id="fallout_altitude_stack" value="5"/> <span class="def-bracket1">[</span><abbr class="def" id="def_fallout_altitude_stack" title="If the fallout contour mode is set to 'staggered', the distance in which each contour is drawn above smaller contours. Units are meters.">?</abbr><span class="def-bracket2">]</span><br>
+            Fill opacity (0-1): <input type="text" id="fallout_fill_alpha" value=".4"> <span class="def-bracket1">[</span><abbr class="def" id="def_fallout_fill_alpha" title="If fallout contours have a fill, the opacity (transparency) of the fill color. 0 = transparent, .5 = 50% transparent/opaque, 1 = fully opaque.">?</abbr><span class="def-bracket2">]</span><br>
+            Line width (px): <input type="text" id="fallout_line_width" value="1"/> <span class="def-bracket1">[</span><abbr class="def" id="def_fallout_line_alpha" title="If fallout contours have a line, the opacity (transparency) of the line. 0 = transparent, .5 = 50% transparent/opaque, 1 = fully opaque.">?</abbr><span class="def-bracket2">]</span><br>
+            Line opacity (0-1): <input type="text" id="fallout_line_alpha" value=".6"/> <span class="def-bracket1">[</span><abbr class="def" id="def_fallout_line_alpha" title="If fallout lines have a fill, the opacity (transparency) of the line color. 0 = transparent, .5 = 50% transparent/opaque, 1 = fully opaque.">?</abbr><span class="def-bracket2">]</span><br>
+        </td>
+        </tr>
+        <tr>
+        <td colspan=2>
+            <div class="adv_submenu">KMZ settings:</div>
+            <ul>
+            Polygon altitude mode: <select id="ring_KMLaltitudeMode">
+                <option value="0" selected>Absolute</option>
+                <option value="1">Relative to ground</option>
+            </select> <span class="def-bracket1">[</span><abbr class="def" id="def_ring_KMLaltitudeMode" title="KML polygons are rendered at various altitudes. If 'absolute' mode is used, it renders them regardless of the height of the ground. If it is 'relative to ground,' it will take into account the terrain. This setting is entirely cosmetic. This only applies to rings and fallout polygons, not 3D models.">?</abbr><span class="def-bracket2">]</span><br>
+            <input type="checkbox" id="force_kml"> Use KML, not KMZ (larger file) <span class="def-bracket1">[</span><abbr class="def" id="def_force_kml" title="Instead of using a KMZ (zipped) file, downloads a KML file instead. KML files are easier to edit and process manually, but are larger files and cannot have models embedded in them. If selected, automatically results in any models being remotely linked as opposed to embedded.">?</abbr><span class="def-bracket2">]</span><br>
+            <input type="checkbox" id="remote_dae"> Use remotely linked 3D models (smaller file) <span class="def-bracket1">[</span><abbr class="def" id="def_remote_dae" title="Many of the 3D models exist as external COLLADA (.dae) files. They can either be embedded into the KMZ file (which results in a slightly larger file), or linked remotely (which requires constant Internet connectivity and sometimes increases render times). This setting is automatically used if KML export is used (because KML cannot embed external files).">?</abbr><span class="def-bracket2">]</span><br>
+            </ul>
+        </td>
+        </tr>
+        </table>
+    </div>
+    <form id="kmzForm" action="scripts/export_kmz.php" method="POST" target="_blank"></form>
+</div>
+<script>if(!local) { !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs"); }</script>
+<script type="text/javascript" src="static/js/plusone.js"></script>
+</body>
+</html>
