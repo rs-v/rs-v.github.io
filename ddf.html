@@ -1,0 +1,23 @@
+<script type="text/javascript">
+   function validate() {
+    if (confirm("提交表单?")) {
+      return true;
+    } else {
+      return false;
+    }
+   }
+   
+   function submitForm() {
+    if (validate()) {
+      document.getElementByIdx_x("myForm").submit();
+    }
+   }
+ </script>
+ <body>
+  <form action="//www.jb51.net" id="myForm">
+  
+    <input type="text"/>
+    <input type="button" value="submitBtn" onclick="submitForm();"/> <!—也可以使用document.getElementByIdx_x(“该按钮的id”).click();来执行onclick事件-->
+  
+  </form>
+</body>
