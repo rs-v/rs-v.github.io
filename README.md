@@ -21,4 +21,4 @@
 
 ### Support or Contact
 
-有困难？ [支持](https://help.github.com/categories/github-pages-basics/) or [链接](https://github.com/contact) 我会救赎你
+有困难？ [支持](http://includelove.mikecrm.com/DgHKtsr) 
