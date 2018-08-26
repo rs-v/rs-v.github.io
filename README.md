@@ -13,7 +13,7 @@
 - 注意
 - 注意
 
-[Image](qm.qq.com/dl/wpa/e_group?gid=281029972&size=430&down=1)
+[Image](https://github.com/rs-v/rs-v.github.io/raw/master/ml.png)
 
 
 ### 结尾  有意愿者请面谈发送邮件至  caoduo@yaohoo.com
