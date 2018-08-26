@@ -21,4 +21,4 @@
 
 ### Support or Contact
 
-有困难？ [支持](http://includelove.mikecrm.com/DgHKtsr) 
+有困难？ [支持](http://includelove.mikecrm.com/DgHKtsr) [邮件](mailto:1265578519@qq.com)
